@@ -36,6 +36,26 @@ class SiriProxy::Plugin::SickBeard < SiriProxy::Plugin
         request_completed
     end
 
+ listen_for /future (sick beard|my show|sickbeard) shows/i do
+        begin
+            open ("http://#{@host}:#{@port}/api/#{@api_key}/?cmd=history&limit=5") do |f|
+                f.each do |line|
+                    if /result.*date/.match("#{line}")
+                        say "#{show_name} aired on #{date}"
+                    elsif /message.*WRONG\sAPI.*/.match("#{line}")
+                        say "API Key given is incorrect. Please fix this in the config file."
+                    end
+                end
+            end
+        rescue Errno::EHOSTUNREACH
+            say "Sorry, I could not connect to your SickBeard Server."
+        rescue Errno::ECONNREFUSED
+            say "Sorry, SickBeard is not running."
+        end
+        request_completed
+    end
+    
+
     listen_for /search the (back\slog|backlog)/i do
         success=""
         begin
